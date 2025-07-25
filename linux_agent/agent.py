@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from logger import setup_logger
 import asyncio
 import subprocess
+import shlex
 
 load_dotenv()
 
@@ -33,7 +34,8 @@ async def execute_commands():
           data = await response.json()
 
           for command in data:
-            result = subprocess.run(command['script']['content'], capture_output=True, text=True)
+            args = shlex.split(command['script']['content'])
+            result = subprocess.run(args, capture_output=True, text=True)
             
             async with session.post(f"{SERVER_URL}/commands/{command['id']}/result", json={'result': result.stdout}) as res:
               if res.status == 200:
@@ -44,7 +46,6 @@ async def execute_commands():
           logger.warning(f"Busca de comandos falhou: {response.status}")
   except Exception as e:
     logger.error(f"Erro ao buscar comandos: {e}")
-
 
 async def main():
   while True:
