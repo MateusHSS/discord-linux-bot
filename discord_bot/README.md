@@ -1,0 +1,1 @@
+Link de convite do bot = https://discord.com/oauth2/authorize?client_id=1398316556257202417&permissions=76800&integration_type=0&scope=bot
