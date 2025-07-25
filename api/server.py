@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
 from models import Base, Machine, Command, CommandStatus, Script
 from db.session import engine, get_db
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from routes.dto.machine import MachineRequestDTO, MachineResponseDTO
 from routes.dto.script import ScriptRequestDTO, ScriptResponseDTO
-from routes.dto.command import CommandRequestDTO
+from routes.dto.command import CommandRequestDTO, CommandResultRequestDTO
 from typing import List
 import time
 from uuid import UUID
@@ -22,14 +22,14 @@ def list_machines(db: Session = Depends(get_db)):
 
 @app.post("/register_machine", response_model=MachineResponseDTO)
 def register_machine(machine_dto: MachineRequestDTO, db: Session = Depends(get_db)):
-  if machine_dto.id:
-    machine = db.query(Machine).filter(Machine.id == machine_dto.id).first()
+  machine = db.query(Machine).filter(Machine.id == machine_dto.id).first()
 
-    machine.last_seen = int(time.time())
-  else:
-    machine = Machine(name=machine_dto.name, last_seen=int(time.time()))
+  if not machine:
+    machine = Machine(id = machine_dto.id, name=machine_dto.name, last_seen=int(time.time()))
     
     db.add(machine)
+  else:
+    machine.last_seen = int(time.time())
     
   db.commit()
 
@@ -72,8 +72,8 @@ def execute_script(command_dto: CommandRequestDTO, db: Session = Depends(get_db)
   return new_command
 
 @app.get("/commands/{machine_id}")
-def list_machine_commands(machine_id: UUID, db: Session = Depends(get_db)):
-  commands = db.query(Command).filter(
+def list_machine_commands(machine_id: str, db: Session = Depends(get_db)):
+  commands = db.query(Command).options(joinedload(Command.script)).filter(
     Command.machine_id == machine_id,
     Command.status == CommandStatus.PENDING
   ).all()
@@ -81,11 +81,17 @@ def list_machine_commands(machine_id: UUID, db: Session = Depends(get_db)):
   return commands
 
 @app.post("/commands/{command_id}/result")
-def get_command_result(command_id: UUID, db: Session = Depends(get_db)):
+def set_command_result(command_id: int, command_result_dto: CommandResultRequestDTO, db: Session = Depends(get_db)):
   command = db.query(Command).filter(Command.id == command_id).first()
 
   if not command:
     raise HTTPException(status_code=404, detail="Comando não encontrado!")
   
+  command.output = command_result_dto.result
+  command.status = CommandStatus.COMPLETED
 
-  return command.output
+  db.commit()
+
+  db.refresh(command)
+
+  return command
