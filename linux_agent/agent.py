@@ -106,7 +106,7 @@ async def main():
   while True:
     await ping()
     await execute_commands()
-    await asyncio.sleep(20)
+    await asyncio.sleep(300)
 
 if __name__ == "__main__":
   asyncio.run(main())
