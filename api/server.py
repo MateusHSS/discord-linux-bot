@@ -1,14 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
-from models import Base, Machine, Command, CommandStatus, Script
-from db.session import engine, get_db
+from .models import Base, Machine, Command, CommandStatus, Script
+from .db.session import engine, get_db
 from sqlalchemy.orm import Session, joinedload
-from routes.dto.machine import MachineRequestDTO, MachineResponseDTO
-from routes.dto.script import ScriptRequestDTO, ScriptResponseDTO
-from routes.dto.command import CommandRequestDTO, CommandResultRequestDTO
+from .routes.dto.machine import MachineRequestDTO, MachineResponseDTO
+from .routes.dto.script import ScriptRequestDTO, ScriptResponseDTO
+from .routes.dto.command import CommandRequestDTO, CommandResultRequestDTO
 from typing import List
 import time
 from uuid import UUID
-from utils.date import five_minutes_ago
+from .utils.date import five_minutes_ago
 
 Base.metadata.create_all(bind=engine)
 
