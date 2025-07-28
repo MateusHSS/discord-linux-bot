@@ -9,6 +9,7 @@ from logger import setup_logger
 load_dotenv()
 
 SERVER_URL = os.getenv("SERVER_URL")
+AUTHORIZED_USERS = os.getenv("AUTHORIZED_USERS", "").split(",")
 
 logger = setup_logger("discord_bot")
 
@@ -18,13 +19,19 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents = intents)
 
+def authorized_user(user_id):
+  return str(user_id) in AUTHORIZED_USERS
+
 @bot.event
 async def on_ready():
   logger.info(f"Logado como {bot.user}")
 
 @bot.command(name="list_machines")
 async def list_machines(ctx):
-  
+  if(not authorized_user(ctx.author.id)):
+    await ctx.send("Você não tem permissão para executar esse comando")
+    return
+
   async with aiohttp.ClientSession() as session:
     try:
       async with session.get(f"{SERVER_URL}/machines") as response:
@@ -49,6 +56,10 @@ async def list_machines(ctx):
 
 @bot.command(name="register_script")
 async def register_script(ctx, name: str = None, content: str = None):
+  if(not authorized_user(ctx.author.id)):
+    await ctx.send("Você não tem permissão para executar esse comando")
+    return
+
   if not name or not content: 
     await ctx.send(f"O uso correto do comando é `!register_script <nome> <conteúdo>`")
     return
@@ -73,6 +84,10 @@ async def register_script(ctx, name: str = None, content: str = None):
 
 @bot.command(name="execute_script")
 async def execute_script(ctx, machine_name: str = None, script_name: str = None):
+  if(not authorized_user(ctx.author.id)):
+    await ctx.send("Você não tem permissão para executar esse comando")
+    return
+
   if not machine_name or not script_name:
     await ctx.send(f"O uso correto do comando é `!execute_script <nome_máquina> <nome_script>`")
     return
