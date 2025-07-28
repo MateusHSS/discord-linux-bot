@@ -2,3 +2,4 @@
 **/__pycache__/**
 **/logs/**
 discord_bot/bot-env/
+**/*venv*/**
